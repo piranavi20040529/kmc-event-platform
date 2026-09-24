@@ -1,0 +1,189 @@
+﻿@model IEnumerable<KMC.EventClient.Models.EventModel>
+
+@{
+    ViewData["Title"] = "Organizer Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var totalEvents = Model.Count();
+    var totalRegistrations = Model.Sum(e => e.ParticipantCount);
+    var totalCategories = Model.Select(e => e.EventType).Distinct().Count();
+}
+
+<div class="container py-4">
+ 
+    <div class="mb-5">
+        <h1 class="fw-bold text-dark mb-1"><i class="fas fa-shield-alt me-2" style="color: #2e5bff;"></i>Organizer Dashboard</h1>
+        <p class="text-muted">Manage all events registered on the KMC platform. Create, update, or remove events.</p>
+    </div>
+
+    
+    <div class="row g-4 mb-5">
+     
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-white stats-card" style="background: linear-gradient(135deg, #0a2540 0%, #2e5bff 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 fw-semibold text-uppercase small mb-1">Total Events</h6>
+                        <h2 class="fw-bold mb-0">@totalEvents</h2>
+                    </div>
+                    <div class="bg-white-10 rounded-3 p-3" style="background-color: rgba(255,255,255,0.2);">
+                        <i class="fas fa-calendar-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+       
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 stats-card" style="background-color: #ffffff;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted fw-semibold text-uppercase small mb-1">Total Registrations</h6>
+                        <h2 class="fw-bold mb-0" style="color: #b7791f;">@totalRegistrations</h2>
+                    </div>
+                    <div class="rounded-3 p-3" style="color: #b7791f !important; background-color: #fefcbf !important;">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 stats-card" style="background-color: #ffffff;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted fw-semibold text-uppercase small mb-1">Event Categories</h6>
+                        <h2 class="fw-bold text-success mb-0">@totalCategories</h2>
+                    </div>
+                    <div class="rounded-3 p-3" style="color: #28a745 !important; background-color: #d4edda !important;">
+                        <i class="fas fa-tags fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background-color: #ffffff;">
+        <div class="card-header border-0 bg-white p-4" style="border-bottom: 1px solid #f0f4f8 !important;">
+            <h4 class="fw-bold text-dark mb-0"><i class="fas fa-list me-2" style="color: #2e5bff;"></i>Event Requests & Management</h4>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0" style="min-width: 900px;">
+                <thead class="table-light">
+                    <tr style="border-bottom: 2px solid #f0f4f8;">
+                        <th class="ps-4 fw-bold">Event Details</th>
+                        <th class="fw-bold">Type</th>
+                        <th class="fw-bold">Date & Time</th>
+                        <th class="fw-bold">Location</th>
+                        <th class="fw-bold">Host</th>
+                        <th class="fw-bold">Participants</th>
+                        <th class="text-end pe-4 fw-bold">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="fas fa-folder-open text-muted mb-3" style="font-size: 40px;"></i>
+                                <p class="text-muted mb-0">No events found in the database.</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr style="border-bottom: 1px solid #f0f4f8;">
+                                <td class="ps-4">
+                                    <span class="fw-bold text-dark">@item.Title</span>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill px-3 py-2 fw-semibold" style="background-color: #e2e8f0; color: #4a5568;">
+                                        @(item.EventType ?? "Event")
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="small fw-semibold text-dark">@item.Date.ToString("dd MMM yyyy")</span>
+                                    <br />
+                                    <span class="small text-muted">@item.Date.ToString("hh:mm tt")</span>
+                                </td>
+                                <td>
+                                    <span class="small text-dark"><i class="fas fa-map-marker-alt text-danger me-1"></i> @item.Location</span>
+                                </td>
+                                <td>
+                                    <span class="small fw-semibold text-dark">@item.OrganizerName</span>
+                                </td>
+                                <td>
+                                    <span class="small fw-semibold text-dark">@item.ParticipantCount / @item.MaxParticipants</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="@Url.Action("Edit", "Events", new { id = item.Id })" class="btn btn-warning btn-sm px-3 py-1 rounded-3 fw-semibold text-dark" title="Edit Event">
+                                            <i class="fas fa-pencil-alt me-1"></i>Edit
+                                        </a>
+                                        <a href="@Url.Action("ViewRegistrations", "Events", new { id = item.Id })" class="btn btn-sm px-3 py-1 rounded-3 fw-semibold btn-view-registrations" title="View Registrations">
+                                            <i class="fas fa-users me-1"></i>View Registrations
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger btn-sm px-3 py-1 rounded-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#deleteModal-@item.Id" title="Delete Event">
+                                            <i class="fas fa-trash-alt me-1"></i>Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+
+                          
+                            <div class="modal fade" id="deleteModal-@item.Id" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                                        <div class="modal-header bg-danger text-white py-3">
+                                            <h5 class="modal-title fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>Delete Event</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <p class="mb-2">Are you sure you want to delete the event <strong>@item.Title</strong>?</p>
+                                            <p class="text-muted small mb-0">This action is irreversible. All details and registrations for this event will be deleted permanently.</p>
+                                        </div>
+                                        <div class="modal-footer bg-light border-0 py-3">
+                                            <button type="button" class="btn btn-secondary px-4 rounded-3 fw-semibold" data-bs-dismiss="modal">Cancel</button>
+                                            <form asp-action="Delete" asp-route-id="@item.Id" asp-route-returnUrl="/Events/AdminDashboard" method="post" style="display:inline;">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-danger px-4 rounded-3 fw-semibold">Delete Event</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stats-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(46, 91, 255, 0.2) !important;
+        }
+
+    /* Same solid color used by the login page's primary button */
+    .btn-view-registrations {
+        background: #0a2540;
+        color: #ffffff;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+        .btn-view-registrations:hover {
+            background: #1a365d;
+            color: #ffffff;
+        }
+</style>

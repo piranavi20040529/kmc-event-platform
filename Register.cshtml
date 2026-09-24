@@ -1,0 +1,198 @@
+﻿@model KMC.EventClient.Models.EventRegistrationModel
+
+@{
+    ViewData["Title"] = "Register for Event";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-4">
+  
+    <div class="mb-4">
+        <a href="@Url.Action("PublicEvents", "Events")" class="btn btn-sm btn-outline-secondary rounded-3 mb-3">
+            <span class="me-1">⬅️</span> Back to Events
+        </a>
+        <h1 class="fw-bold text-dark mb-1" style="color: #0a2540 !important;"><span class="me-2" style="color: #2e5bff;">🎟️</span>Register for Event</h1>
+        <p class="text-muted mb-0">Fill in your details below to secure your spot at this event.</p>
+    </div>
+
+    <div class="row g-4 align-items-start">
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-auto" style="background-color: #ffffff;">
+                <div class="py-3 px-4" style="background: linear-gradient(135deg, #0a2540 0%, #2e5bff 100%);">
+                    <span class="badge rounded-pill px-3 py-2 fw-semibold" style="background-color: rgba(255,255,255,0.2); color: #fff; font-size: 12px;">
+                        <span class="me-1">🏷️</span>@(ViewBag.EventType ?? "Event")
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <h4 class="fw-bold text-dark mb-3" style="color: #0a2540 !important;">@(ViewBag.EventTitle ?? "Event")</h4>
+                    <div class="small text-muted mb-1">
+                        <div class="d-flex align-items-start mb-3">
+                            <span class="me-2 mt-1" style="color: #2e5bff; width: 16px;">📅</span>
+                            <div>
+                                <div class="fw-semibold text-dark" style="font-size: 13px;">Date &amp; Time</div>
+                                <div>@(ViewBag.EventDate ?? "TBD")</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start mb-3">
+                            <span class="text-danger me-2 mt-1" style="width: 16px;">📍</span>
+                            <div>
+                                <div class="fw-semibold text-dark" style="font-size: 13px;">Location</div>
+                                <div>@(ViewBag.EventLocation ?? "TBD")</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start mb-3">
+                            <span class="text-secondary me-2 mt-1" style="width: 16px;">🧑‍💼</span>
+                            <div>
+                                <div class="fw-semibold text-dark" style="font-size: 13px;">Organizer</div>
+                                <div>@(ViewBag.EventOrganizer ?? "Kandy Municipal Council")</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start">
+                            <span class="text-secondary me-2 mt-1" style="width: 16px;">👥</span>
+                            <div>
+                                <div class="fw-semibold text-dark" style="font-size: 13px;">Participants</div>
+                                <div>@(ViewBag.EventParticipants ?? "—")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-4 py-3" style="background-color: #f8fafc; border-top: 1px solid #f0f4f8;">
+                    <div class="d-flex align-items-center gap-2">
+                        @if (ViewBag.IsFull == true)
+                        {
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 fw-semibold small">
+                                <span class="me-1">❌</span>Event Full
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-semibold small">
+                                <span class="me-1">✅</span>Open for Registration
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+       
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5" style="background-color: #ffffff;">
+                <h5 class="fw-bold text-dark mb-1" style="color: #0a2540 !important;">Your Registration Details</h5>
+                <p class="text-muted small mb-4">All fields marked with <span class="text-danger">*</span> are required.</p>
+
+                @if (ViewBag.IsFull == true)
+                {
+                    <div class="alert alert-danger border-0 rounded-3 shadow-sm d-flex align-items-center mb-4" role="alert">
+                        <span class="me-3 fs-4" style="color: #dc3545;">⚠️</span>
+                        <div>
+                            <strong>Event is Full!</strong> Registration is currently closed as the maximum capacity of participants has been reached.
+                        </div>
+                    </div>
+                }
+
+                <form asp-action="Register" asp-route-id="@Model.EventId" method="post" id="registerEventForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="EventId" />
+
+                   
+                    <div class="mb-4">
+                        <label asp-for="FullName" class="form-label fw-semibold" style="color: #0a2540; font-size: 14px;">
+                            Full Name <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group-custom position-relative">
+                            <span class="position-absolute" style="left: 14px; top: 50%; transform: translateY(-50%); color: #8898aa; font-size: 15px; z-index: 2;">👤</span>
+                            <input asp-for="FullName" class="form-control ps-5 py-3 rounded-3 border-0 bg-light" placeholder="Enter your full name" style="font-size: 14px;" />
+                        </div>
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                 
+                    <div class="mb-4">
+                        <label asp-for="Email" class="form-label fw-semibold" style="color: #0a2540; font-size: 14px;">
+                            Email Address <span class="text-danger">*</span>
+                        </label>
+                        <div class="position-relative">
+                            <span class="position-absolute" style="left: 14px; top: 50%; transform: translateY(-50%); color: #8898aa; font-size: 15px; z-index: 2;">✉️</span>
+                            <input asp-for="Email" type="email" class="form-control ps-5 py-3 rounded-3 border-0 bg-light" placeholder="Enter your email address" style="font-size: 14px;" />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                 
+                    <div class="mb-4">
+                        <label asp-for="PhoneNumber" class="form-label fw-semibold" style="color: #0a2540; font-size: 14px;">
+                            Phone Number <span class="text-danger">*</span>
+                        </label>
+                        <div class="position-relative">
+                            <span class="position-absolute" style="left: 14px; top: 50%; transform: translateY(-50%); color: #8898aa; font-size: 15px; z-index: 2;">📞</span>
+                            <input asp-for="PhoneNumber" type="tel" class="form-control ps-5 py-3 rounded-3 border-0 bg-light" placeholder="Enter your phone number" style="font-size: 14px;" />
+                        </div>
+                        <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                    </div>
+
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label fw-semibold" style="color: #0a2540; font-size: 14px;">
+                            Additional Notes <span class="text-muted fw-normal">(Optional)</span>
+                        </label>
+                        <textarea asp-for="Notes" class="form-control py-3 px-4 rounded-3 border-0 bg-light" rows="3"
+                                  placeholder="Any special requirements or notes for the organizer..."
+                                  style="font-size: 14px; resize: none;"></textarea>
+                    </div>
+
+                   
+                    <div class="mb-4 p-3 rounded-3" style="background-color: #f0f4f8;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmCheck" required style="margin-top: 4px;">
+                            <label class="form-check-label small text-muted" for="confirmCheck">
+                                I confirm that the details provided are accurate and I agree to attend this event hosted by the Kandy Municipal Council.
+                            </label>
+                        </div>
+                    </div>
+
+                   
+                    <div class="d-flex gap-3">
+                        <a href="@Url.Action("PublicEvents", "Events")"
+                           class="btn btn-outline-secondary flex-grow-1 py-3 rounded-3 fw-semibold" style="font-size: 15px;">
+                            <span class="me-2">✖️</span>Cancel
+                        </a>
+                        @if (ViewBag.IsFull == true)
+                        {
+                            <button type="submit" class="btn btn-secondary flex-grow-1 py-3 rounded-3 fw-bold" id="submitRegBtn" disabled>
+                                <span class="me-2">🚫</span>Event Full
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="submit" class="btn flex-grow-1 py-3 rounded-3 fw-bold" id="submitRegBtn"
+                                    style="background: linear-gradient(135deg, #0a2540 0%, #2e5bff 100%); color: white; border: none; font-size: 15px; transition: all 0.3s;">
+                                <span class="me-2">✅</span>Confirm Registration
+                            </button>
+                        }
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus {
+        border-color: #2e5bff !important;
+        box-shadow: 0 0 0 4px rgba(46, 91, 255, 0.12) !important;
+        background-color: #ffffff !important;
+    }
+
+    #submitRegBtn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(10, 37, 64, 0.3);
+    }
+</style>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

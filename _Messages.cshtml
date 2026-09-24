@@ -1,0 +1,67 @@
+@if (TempData["SuccessMessage"] != null)
+{
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof openCustomModal === 'function') {
+                openCustomModal({
+                    title: 'Success',
+                messagePrimary: '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["SuccessMessage"]?.ToString() ?? string.Empty))',
+                    type: 'success',
+                    showCancel: false,
+                    confirmText: 'OK'
+                });
+            }
+        });
+    </script>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof openCustomModal === 'function') {
+                openCustomModal({
+                    title: 'Error',
+                messagePrimary: '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["ErrorMessage"]?.ToString() ?? string.Empty))',
+                    type: 'danger',
+                    showCancel: false,
+                    confirmText: 'OK'
+                });
+            }
+        });
+    </script>
+}
+
+@if (TempData["InfoMessage"] != null)
+{
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof openCustomModal === 'function') {
+                openCustomModal({
+                    title: 'Info',
+                messagePrimary: '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["InfoMessage"]?.ToString() ?? string.Empty))',
+                    type: 'info',
+                    showCancel: false,
+                    confirmText: 'OK'
+                });
+            }
+        });
+    </script>
+}
+
+@if (TempData["WarningMessage"] != null)
+{
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof openCustomModal === 'function') {
+                openCustomModal({
+                    title: 'Warning',
+                messagePrimary: '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["WarningMessage"]?.ToString() ?? string.Empty))',
+                    type: 'warning',
+                    showCancel: false,
+                    confirmText: 'OK'
+                });
+            }
+        });
+    </script>
+}

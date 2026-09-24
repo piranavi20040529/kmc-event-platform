@@ -1,0 +1,47 @@
+﻿@model KMC.EventClient.Models.EventModel
+
+@{
+    ViewData["Title"] = "Delete Event";
+}
+
+<h2>Delete Event</h2>
+
+<div class="alert alert-danger">
+    <h4>Are you sure you want to delete this event?</h4>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<div class="card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Title</dt>
+            <dd class="col-sm-9">@Model.Title</dd>
+
+            <dt class="col-sm-3">Description</dt>
+            <dd class="col-sm-9">@Model.Description</dd>
+
+            <dt class="col-sm-3">Date</dt>
+            <dd class="col-sm-9">@Model.Date.ToString("yyyy-MM-dd HH:mm")</dd>
+
+            <dt class="col-sm-3">Location</dt>
+            <dd class="col-sm-9">@Model.Location</dd>
+
+            <dt class="col-sm-3">Event Type</dt>
+            <dd class="col-sm-9">@Model.EventType</dd>
+
+            <dt class="col-sm-3">Max Participants</dt>
+            <dd class="col-sm-9">@Model.MaxParticipants</dd>
+        </dl>
+
+        <form asp-action="Delete" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <button type="submit" class="btn btn-danger">Delete</button>
+            <a asp-action="MyEvents" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,184 @@
+﻿@model KMC.EventClient.Models.EventModel
+
+@{
+    ViewData["Title"] = "Edit Event";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background-color: #ffffff;">
+                <div class="card-header border-0 text-white p-4" style="background-color: #0a2540;">
+                    <h2 class="mb-0 fw-bold"><i class="fas fa-edit me-2"></i>Edit Event</h2>
+                    <p class="text-white-50 mb-0 mt-1">Modify your event details below.</p>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <form asp-action="Edit" method="post" id="editEventForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Id" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                        
+                        <div class="form-group mb-4">
+                            <label asp-for="Title" class="form-label small fw-bold text-muted">Event Title *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0 text-muted"><i class="fas fa-heading"></i></span>
+                                <input asp-for="Title" class="form-control bg-light border-0 py-2.5" placeholder="Enter event title" required />
+                            </div>
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+
+                        
+                        <div class="form-group mb-4">
+                            <label asp-for="Description" class="form-label small fw-bold text-muted">Description *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0 text-muted align-items-start pt-2.5"><i class="fas fa-align-left"></i></span>
+                                <textarea asp-for="Description" class="form-control bg-light border-0" rows="4" placeholder="Describe your event..." required></textarea>
+                            </div>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3 mb-md-0">
+                                    <label class="form-label small fw-bold text-muted">Event Date *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0 text-muted"><i class="fas fa-calendar-alt"></i></span>
+                                        <input type="date" id="eventDate" class="form-control bg-light border-0 py-2.5" value="@Model.Date.ToString("yyyy-MM-dd")" required />
+                                    </div>
+                                    <span id="dateError" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                           
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label small fw-bold text-muted">Event Time *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0 text-muted"><i class="far fa-clock"></i></span>
+                                        <input type="time" id="eventTime" class="form-control bg-light border-0 py-2.5" value="@Model.Date.ToString("HH:mm")" required />
+                                    </div>
+                                    <span id="timeError" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                      
+                        <input type="hidden" id="Date" name="Date" asp-for="Date" />
+
+                       
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3 mb-md-0">
+                                    <label asp-for="Location" class="form-label small fw-bold text-muted">Location *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0 text-muted"><i class="fas fa-map-marker-alt"></i></span>
+                                        <input asp-for="Location" class="form-control bg-light border-0 py-2.5" placeholder="Event location" required />
+                                    </div>
+                                    <span asp-validation-for="Location" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                           
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="EventType" class="form-label small fw-bold text-muted">Event Type *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0 text-muted"><i class="fas fa-tags"></i></span>
+                                        <select asp-for="EventType" class="form-select bg-light border-0 py-2.5" required>
+                                            <option value="">-- Select Event Type --</option>
+                                            <option value="Food">Food</option>
+                                            <option value="Festival">Festival</option>
+                                            <option value="Cultural">Cultural</option>
+                                            <option value="Religious">Religious</option>
+                                            <option value="Education">Education</option>
+                                            <option value="Business">Business</option>
+                                            <option value="Social">Social</option>
+                                            <option value="Art">Art</option>
+                                            <option value="Workshop">Workshop</option>
+                                            <option value="Conference">Conference</option>
+                                            <option value="Charity">Charity</option>
+                                            <option value="Sports">Sports</option>
+                                            <option value="Music">Music</option>
+                                        </select>
+                                    </div>
+                                    <span asp-validation-for="EventType" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                      
+                        <div class="form-group mb-5">
+                            <label asp-for="MaxParticipants" class="form-label small fw-bold text-muted">Max Participants *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0 text-muted"><i class="fas fa-users"></i></span>
+                                <input asp-for="MaxParticipants" class="form-control bg-light border-0 py-2.5" type="number" min="1" required />
+                            </div>
+                            <span asp-validation-for="MaxParticipants" class="text-danger small"></span>
+                        </div>
+
+                    
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="@Url.Action("MyEvents", "Events")" class="btn btn-light px-4 py-2.5 rounded-3 fw-semibold">
+                                <i class="fas fa-arrow-left me-2"></i>Back to My Events
+                            </a>
+                            <button type="submit" class="btn btn-primary px-5 py-2.5 rounded-3 fw-semibold shadow-sm" style="background-color: #2e5bff; border: none;">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('eventDate');
+            const timeInput = document.getElementById('eventTime');
+            const hiddenDateField = document.getElementById('Date');
+            const form = document.getElementById('editEventForm');
+            const dateError = document.getElementById('dateError');
+            const timeError = document.getElementById('timeError');
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const minDate = `${year}-${month}-${day}`;
+            dateInput.min = minDate;
+
+          
+            form.addEventListener('submit', function(e) {
+                const dateValue = dateInput.value;
+                const timeValue = timeInput.value;
+
+                if (!dateValue) {
+                    e.preventDefault();
+                    dateError.textContent = 'Please select a date';
+                    return false;
+                }
+
+                if (!timeValue) {
+                    e.preventDefault();
+                    timeError.textContent = 'Please select a time';
+                    return false;
+                }
+
+                const combinedDateTime = `${dateValue}T${timeValue}:00`;
+                hiddenDateField.value = combinedDateTime;
+            });
+
+
+            dateInput.addEventListener('change', () => dateError.textContent = '');
+            timeInput.addEventListener('change', () => timeError.textContent = '');
+        });
+    </script>
+}

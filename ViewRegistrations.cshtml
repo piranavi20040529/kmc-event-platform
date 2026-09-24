@@ -1,0 +1,88 @@
+﻿@model KMC.EventClient.Models.EventRegistrationsPageModel
+
+@{
+    ViewData["Title"] = "Registrations";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-4">
+  
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-5">
+        <div>
+            <h1 class="fw-bold text-dark mb-1">
+                <i class="fas fa-users me-2" style="color: #2e5bff;"></i>Registrations for "@(Model.EventTitle ?? "Event")"
+            </h1>
+            <p class="text-muted mb-0">
+                @Model.Registrations.Count registered
+            </p>
+        </div>
+        <a href="@Url.Action("MyEvents", "Events")" class="btn rounded-3 fw-semibold px-4 py-2 btn-outline-navy" title="Back to My Events">
+            <i class="fas fa-arrow-left me-2"></i>Back to My Events
+        </a>
+    </div>
+
+    @if (Model.Registrations is null || Model.Registrations.Count == 0)
+    {
+        <div class="text-center py-5 rounded-4 shadow-sm" style="background-color: #ffffff;">
+            <i class="fas fa-user-slash text-muted mb-3" style="font-size: 60px;"></i>
+            <h4 class="text-dark fw-semibold">No Registrations Yet</h4>
+            <p class="text-muted px-3">Nobody has registered for this event yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background-color: #ffffff;">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="registrations-thead">
+                        <tr>
+                            <th class="py-3 ps-4">#</th>
+                            <th class="py-3"><i class="fas fa-user me-2"></i>Name</th>
+                            <th class="py-3"><i class="fas fa-envelope me-2"></i>Email</th>
+                            <th class="py-3"><i class="fas fa-phone me-2"></i>Phone</th>
+                            <th class="py-3 pe-4"><i class="far fa-clock me-2"></i>Registered At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var i = 0;
+                        }
+                        @foreach (var reg in Model.Registrations)
+                        {
+                            i++;
+                            <tr>
+                                <td class="ps-4 text-muted">@i</td>
+                                <td class="fw-semibold text-dark">@(string.IsNullOrWhiteSpace(reg.FullName) ? "—" : reg.FullName)</td>
+                                <td class="text-muted">@(string.IsNullOrWhiteSpace(reg.Email) ? "—" : reg.Email)</td>
+                                <td class="text-muted">@(string.IsNullOrWhiteSpace(reg.PhoneNumber) ? "—" : reg.PhoneNumber)</td>
+                                <td class="pe-4 text-muted">@reg.RegisteredAt.ToString("dd MMM yyyy, hh:mm tt")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .registrations-thead th {
+        background-color: #0a2540 !important;
+        color: #ffffff !important;
+        border-color: #0a2540 !important;
+        vertical-align: middle;
+    }
+
+    .btn-outline-navy {
+        background-color: #ffffff;
+        border: 2px solid #0a2540;
+        color: #0a2540;
+        transition: all 0.2s ease;
+    }
+
+        .btn-outline-navy:hover {
+            background-color: #0a2540;
+            color: #ffffff;
+            border-color: #0a2540;
+        }
+</style>

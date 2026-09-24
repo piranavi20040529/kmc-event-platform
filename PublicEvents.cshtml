@@ -1,0 +1,159 @@
+﻿@model IEnumerable<KMC.EventClient.Models.EventModel>
+
+@{
+    ViewData["Title"] = "Browse Events";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-4">
+  
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-5">
+        <div>
+            <h1 class="fw-bold text-dark mb-1"><i class="fas fa-calendar-alt me-2" style="color: #2e5bff;"></i>Browse Public Events</h1>
+            <p class="text-muted mb-0">Browse and register for upcoming events hosted by the Kandy Municipal Council.</p>
+        </div>
+    </div>
+
+   
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-5" style="background-color: #ffffff;">
+        <form asp-action="PublicEvents" method="get" class="row g-3 align-items-end">
+           
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-muted d-flex align-items-center">
+                    <i class="fas fa-search me-1" style="color: #2e5bff;"></i>Keyword
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0 text-muted"><i class="fas fa-keyboard"></i></span>
+                    <input type="text" name="keyword" value="@Context.Request.Query["keyword"]" class="form-control bg-light border-0 rounded-3" placeholder="Search title, description..." />
+                </div>
+            </div>
+           
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-muted d-flex align-items-center">
+                    <i class="fas fa-calendar-day me-1" style="color: #2e5bff;"></i>Filter by Date
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0 text-muted"><i class="fas fa-calendar"></i></span>
+                    <input type="date" name="date" value="@Context.Request.Query["date"]" class="form-control bg-light border-0 rounded-3" />
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted d-flex align-items-center">
+                    <i class="fas fa-filter me-1" style="color: #2e5bff;"></i>Filter by Event Type
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0 text-muted"><i class="fas fa-tags"></i></span>
+                    <select name="type" class="form-select bg-light border-0 rounded-3">
+                        <option value="">-- All Types --</option>
+                        <option value="Food"> Food</option>
+                        <option value="Festival"> Festival</option>
+                        <option value="Cultural"> Cultural</option>
+                        <option value="Religious"> Religious</option>
+                        <option value="Education"> Education</option>
+                        <option value="Business"> Business</option>
+                        <option value="Social"> Social</option>
+                        <option value="Art"> Art</option>
+                        <option value="Workshop"> Workshop</option>
+                        <option value="Conference"> Conference</option>
+                        <option value="Charity"> Charity</option>
+                        <option value="Music"> Music</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-dark w-100 py-2 rounded-3 fw-semibold" style="background-color: #0a2540; border: none;">
+                    <i class="fas fa-search me-2"></i>Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    
+    @if (Model is null || !Model.Any())
+    {
+        <div class="text-center py-5 rounded-4 shadow-sm" style="background-color: #ffffff;">
+            <i class="fas fa-calendar-times text-muted mb-3" style="font-size: 60px;"></i>
+            <h4 class="text-dark fw-semibold">No Events Found</h4>
+            <p class="text-muted px-3">Try adjusting your date or type filters to find available events.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in Model)
+            {
+                var isFull = item.MaxParticipants > 0 && item.ParticipantCount >= item.MaxParticipants;
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden card-hover-public" style="background-color: #ffffff; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                        
+                        <div class="bg-light py-3 px-4 d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #f0f4f8;">
+                            <span class="badge rounded-pill px-3 py-2 fw-semibold" style="background-color: #e2e8f0; color: #4a5568;">
+                                @(item.EventType ?? "Event")
+                            </span>
+                            <span class="small fw-semibold @(isFull ? "text-danger" : "text-muted")">
+                                <i class="fas fa-users me-1"></i> @item.ParticipantCount / @item.MaxParticipants
+                                @if (isFull)
+                                {
+                                    <span class="fw-bold">(Full)</span>
+                                }
+                            </span>
+                        </div>
+
+                        
+                        <div class="card-body p-4 d-flex flex-column">
+                            <h4 class="card-title fw-bold text-dark mb-2">@(item.Title ?? "Untitled Event")</h4>
+                            <p class="card-text text-muted mb-4 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; line-height: 1.6;">
+                                @(item.Description ?? "No description provided")
+                            </p>
+
+                            <div class="small text-muted mb-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="far fa-calendar-alt me-2" style="color: #2e5bff; width: 16px;"></i>
+                                    <span>@item.Date.ToString("dd MMM yyyy, hh:mm tt")</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-map-marker-alt text-danger me-2" style="width: 16px;"></i>
+                                    <span>@(item.Location ?? "Location not specified")</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user-tie text-secondary me-2" style="width: 16px;"></i>
+                                    <span>Host: <strong>@(item.OrganizerName ?? "Kandy Municipal Council")</strong></span>
+                                </div>
+                            </div>
+
+                            @if (isFull)
+                            {
+                                <button type="button" class="btn btn-secondary w-100 py-2 rounded-3 fw-semibold mt-auto" disabled>
+                                    <i class="fas fa-ban me-2"></i>Event Full
+                                </button>
+                            }
+                            else
+                            {
+                                <a href="@Url.Action("Register", "Events", new { id = item.Id })"
+                                   class="btn btn-outline-dark w-100 py-2 rounded-3 fw-semibold mt-auto btn-register-public-hover"
+                                   style="border-color: #0a2540; color: #0a2540; transition: all 0.2s;">
+                                    <i class="fas fa-ticket-alt me-2"></i>Register for Event
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .card-hover-public:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(46, 91, 255, 0.15) !important;
+    }
+
+    .btn-register-public-hover:hover {
+        background-color: #0a2540 !important;
+        color: #ffffff !important;
+        border-color: #0a2540 !important;
+    }
+</style>

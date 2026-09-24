@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - KMC Events</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .navbar-custom {
+            background-color: #0a2540 !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+            .navbar-custom .navbar-brand {
+                font-weight: 700;
+                font-size: 1.5rem;
+                color: #ffffff;
+                letter-spacing: 0.5px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+        .navbar-logo {
+            height: 55px;
+            width: 55px;
+            object-fit: contain;
+            border-radius: 10px;
+            filter: drop-shadow(0 2px 6px rgba(0,120,255,0.45));
+            transition: transform 0.3s ease;
+        }
+
+            .navbar-logo:hover {
+                transform: scale(1.08);
+            }
+
+            .navbar-custom .nav-link {
+                font-weight: 500;
+                padding: 0.6rem 1.1rem !important;
+                border-radius: 8px;
+                color: rgba(255,255,255,0.85);
+                transition: all 0.3s ease;
+            }
+
+                .navbar-custom .nav-link:hover {
+                    color: #ffffff;
+                    background-color: rgba(255,255,255,0.1);
+                }
+
+                .navbar-custom .nav-link.active {
+                    color: #ffffff;
+                    background-color: rgba(255,255,255,0.18);
+                    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+                }
+
+        .user-welcome {
+            color: #ffd700;
+            font-weight: 600;
+            padding: 0.6rem 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .logout-btn {
+            color: #ff6b6b !important;
+            font-weight: 600;
+        }
+
+            .logout-btn:hover {
+                background-color: rgba(255,107,107,0.15) !important;
+                color: #ff6b6b !important;
+            }
+
+        .footer-custom {
+            background-color: #0a2540 !important;
+            color: rgba(255, 255, 255, 0.75);
+            border-top: 3px solid #1a365d;
+            padding: 20px 0 !important;
+            margin-top: auto !important;
+        }
+
+            .footer-custom small {
+                font-size: 12px;
+                letter-spacing: 0.3px;
+            }
+
+        .custom-modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .custom-modal-card {
+            background: #ffffff;
+            border-radius: 20px;
+            max-width: 520px;
+            width: 100%;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: modalFadeIn 0.3s ease-out;
+            border: none;
+        }
+
+        .custom-modal-header {
+            padding: 18px 24px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .custom-modal-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+            .custom-modal-header-left i {
+                font-size: 1.3rem;
+            }
+
+        .custom-modal-body {
+            padding: 28px 24px;
+            background: #ffffff;
+        }
+
+        .custom-modal-message-primary {
+            color: #333333;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 1.15rem;
+            line-height: 1.5;
+        }
+
+        .custom-modal-message-secondary {
+            color: #666666;
+            font-size: 0.95rem;
+            margin-bottom: 0;
+            line-height: 1.5;
+        }
+
+        .custom-modal-footer {
+            padding: 16px 24px;
+            background: #ffffff;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            border-top: 1px solid #f0f4f8;
+        }
+
+        .custom-modal-btn {
+            border-radius: 10px;
+            padding: 10px 24px;
+            font-weight: 600;
+            border: none;
+            font-size: 14px;
+            transition: opacity 0.2s;
+            cursor: pointer;
+        }
+
+            .custom-modal-btn:hover {
+                opacity: 0.9;
+            }
+
+        .custom-modal-btn-cancel {
+            background: #6c757d;
+            color: #ffffff;
+        }
+
+        .custom-modal-btn-confirm {
+            background: #dc3545;
+            color: #ffffff;
+        }
+
+        @@keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+   
+    <div id="custom-modal-backdrop" class="custom-modal-backdrop">
+        <div class="custom-modal-card">
+           
+            <div id="custom-modal-header" class="custom-modal-header">
+                <div class="custom-modal-header-left">
+                    <i id="custom-modal-icon" class="fas fa-exclamation-triangle"></i>
+                    <span id="custom-modal-title">Delete Event</span>
+                </div>
+                <i class="fas fa-times" style="cursor: pointer; opacity: 0.8; font-size: 1.1rem;" onclick="closeCustomModal()"></i>
+            </div>
+            
+            <div class="custom-modal-body">
+                <div id="custom-modal-message-primary" class="custom-modal-message-primary">Are you sure you want to delete this event?</div>
+                <div id="custom-modal-message-secondary" class="custom-modal-message-secondary">This action cannot be undone.</div>
+            </div>
+           
+            <div class="custom-modal-footer">
+                <button id="custom-modal-btn-cancel" class="custom-modal-btn custom-modal-btn-cancel" onclick="closeCustomModal()">Cancel</button>
+                <button id="custom-modal-btn-confirm" class="custom-modal-btn custom-modal-btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow-lg">
+        <div class="container">
+            @{
+                var _brandRole = Context.Session.GetString("Role");
+                var _brandLoggedIn = !string.IsNullOrEmpty(Context.Session.GetString("JWTToken"));
+                var _brandAction = _brandRole == "Organizer" ? "MyEvents"
+                : (_brandLoggedIn ? "PublicEvents" : "Index");
+            }
+            <a class="navbar-brand" href="@Url.Action(_brandAction, "Events")">
+                <img src="~/images/building-logo.jpg" alt="KMC Logo" class="navbar-logo" />
+                KMC Events
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    @if (ViewBag.IsLoggedIn == true)
+                    {
+                        @if (ViewBag.Role == "Organizer")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "MyEvents" ? "active" : "")"
+                                   href="@Url.Action("MyEvents", "Events")">
+                                    <i class="fas fa-calendar-check me-1"></i>My Events
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Create" ? "active" : "")"
+                                   href="@Url.Action("Create", "Events")">
+                                    <i class="fas fa-plus-circle me-1"></i>Create Event
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "PublicEvents" ? "active" : "")"
+                                   href="@Url.Action("PublicEvents", "Events")">
+                                    <i class="fas fa-search me-1"></i>Browse Events
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "MyRegistrations" ? "active" : "")"
+                                   href="@Url.Action("MyRegistrations", "Events")">
+                                    <i class="fas fa-ticket-alt me-1"></i>My Registrations
+                                </a>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
+                               href="@Url.Action("Index", "Events")">
+                                <i class="fas fa-list me-1"></i>All Events
+                            </a>
+                        </li>
+                    }
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    @if (ViewBag.IsLoggedIn == true)
+                    {
+                        <li class="nav-item">
+                            <span class="user-welcome">
+                                <i class="fas fa-user-circle me-1"></i> @ViewBag.Username (@ViewBag.Role)
+                            </span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link logout-btn" href="@Url.Action("Logout", "Auth")">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("Login", "Auth")">
+                                <i class="fas fa-sign-in-alt me-1"></i>Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="@Url.Action("Register", "Auth")">
+                                <i class="fas fa-user-plus me-1"></i>Register
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 main-content">
+        <partial name="_Messages" />
+        @RenderBody()
+    </div>
+
+    <footer class="footer footer-custom mt-5">
+        <div class="container">
+            <div class="row align-items-center py-1">
+                <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
+                    <span style="color: #ffd700; font-weight: 700; font-size: 15px; letter-spacing: 0.5px;">
+                        <i class="fas fa-landmark me-2"></i>KMC EVENTS
+                    </span>
+                    <span class="ms-2" style="color: rgba(255,255,255,0.6); font-size: 13px;">| Kandy Municipal Council</span>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <small style="color: rgba(255,255,255,0.65); font-size: 12px; letter-spacing: 0.3px;">
+                        <i class="fas fa-copyright me-1"></i>@DateTime.Now.Year Kandy Municipal Council &mdash; All Rights Reserved
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        var currentModalConfirmCallback = null;
+
+        function openCustomModal(options) {
+            var backdrop = document.getElementById('custom-modal-backdrop');
+            var header = document.getElementById('custom-modal-header');
+            var icon = document.getElementById('custom-modal-icon');
+            var title = document.getElementById('custom-modal-title');
+            var msgPrimary = document.getElementById('custom-modal-message-primary');
+            var msgSecondary = document.getElementById('custom-modal-message-secondary');
+            var btnCancel = document.getElementById('custom-modal-btn-cancel');
+            var btnConfirm = document.getElementById('custom-modal-btn-confirm');
+
+            title.innerText = options.title || 'Notification';
+            msgPrimary.innerText = options.messagePrimary || '';
+            msgSecondary.innerText = options.messageSecondary || '';
+
+            var headerBg = '#0a2540';
+            var iconClass = 'fa-info-circle';
+            var confirmBtnBg = '#0a2540';
+
+            if (options.type === 'danger' || options.type === 'error') {
+                headerBg = '#dc3545';
+                iconClass = 'fa-times-circle';
+                confirmBtnBg = '#dc3545';
+            } else if (options.type === 'success') {
+                headerBg = '#198754';
+                iconClass = 'fa-check-circle';
+                confirmBtnBg = '#198754';
+            } else if (options.type === 'warning') {
+                headerBg = '#fd7e14';
+                iconClass = 'fa-exclamation-triangle';
+                confirmBtnBg = '#fd7e14';
+            }
+
+            header.style.backgroundColor = headerBg;
+            icon.className = 'fas ' + iconClass;
+            btnConfirm.style.backgroundColor = confirmBtnBg;
+            btnConfirm.innerText = options.confirmText || 'OK';
+
+            if (options.showCancel) {
+                btnCancel.style.display = 'block';
+                btnCancel.innerText = options.cancelText || 'Cancel';
+            } else {
+                btnCancel.style.display = 'none';
+            }
+
+            currentModalConfirmCallback = options.onConfirm || null;
+            btnConfirm.onclick = function() {
+                closeCustomModal();
+                if (typeof currentModalConfirmCallback === 'function') {
+                    currentModalConfirmCallback();
+                }
+            };
+
+            backdrop.style.display = 'flex';
+        }
+
+        function closeCustomModal() {
+            document.getElementById('custom-modal-backdrop').style.display = 'none';
+            currentModalConfirmCallback = null;
+        }
+
+        function confirmDelete(id, title, returnUrl) {
+            openCustomModal({
+                title: 'Delete Event',
+                messagePrimary: 'Are you sure you want to delete ' + title + '?',
+                messageSecondary: 'This action cannot be undone.',
+                type: 'danger',
+                showCancel: true,
+                cancelText: 'Cancel',
+                confirmText: 'Delete Event',
+                onConfirm: function() {
+                    var form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '/Events/Delete/' + id + (returnUrl ? '?returnUrl=' + encodeURIComponent(returnUrl) : '');
+
+                    var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                    if (tokenInput) {
+                        form.appendChild(tokenInput.cloneNode());
+                    }
+
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

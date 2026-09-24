@@ -1,0 +1,101 @@
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<style>
+    .jumbotron {
+        background-color: #eeeeee;
+        padding: 40px;
+        margin-bottom: 30px;
+        border-radius: 6px;
+    }
+    .jumbotron h1 {
+        font-size: 48px;
+        margin-bottom: 15px;
+        font-weight: 500;
+    }
+    .jumbotron p.lead {
+        font-size: 20px;
+        font-weight: 300;
+        margin-bottom: 20px;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        padding: 10px 20px;
+        font-size: 18px;
+        border-radius: 4px;
+        color: white;
+        text-decoration: none;
+    }
+    .btn-default {
+        background-color: #ffffff;
+        border: 1px solid #cccccc;
+        padding: 6px 12px;
+        color: #333333;
+        text-decoration: none;
+        border-radius: 4px;
+        display: inline-block;
+        margin-top: 10px;
+    }
+    .btn-default:hover {
+        background-color: #e6e6e6;
+        border-color: #adadad;
+    }
+    .content-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+    .col-md-4 {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+        padding-right: 15px;
+        padding-left: 15px;
+    }
+    .col-md-4 h2 {
+        font-size: 24px;
+        margin-top: 20px;
+        margin-bottom: 10px;
+    }
+    .col-md-4 p {
+        font-size: 14px;
+        line-height: 1.5;
+        color: #333;
+    }
+</style>
+
+<div class="jumbotron">
+    <h1>KMC.EventPlatformAPI</h1>
+    <p class="lead">This is my Web API for the Kandy Municipal Council.</p>
+    <p><a href="/Events/PublicEvents" class="btn btn-primary">Learn more &raquo;</a></p>
+</div>
+
+<div class="content-row">
+    <div class="col-md-4">
+        <h2>Getting started</h2>
+        <p>
+            KMC.EventPlatformAPI is a framework that makes it easy to build HTTP services that reach a broad range of clients, including browsers and mobile devices. This API is an ideal platform for building RESTful applications on the .NET Framework for city events.
+        </p>
+        <p><a class="btn btn-default" href="/Auth/Login">Learn more &raquo;</a></p>
+    </div>
+    <div class="col-md-4">
+        <h2>Get more libraries</h2>
+        <p>
+            NuGet is a free Visual Studio extension that makes it easy to add, remove, and update libraries and tools in Visual Studio projects to enhance the Event Platform.
+        </p>
+        <p><a class="btn btn-default" href="#">Learn more &raquo;</a></p>
+    </div>
+    <div class="col-md-4">
+        <h2>Web Hosting</h2>
+        <p>
+            You can easily find a web hosting company that offers the right mix of features and price for your applications to host the KMC Services.
+        </p>
+        <p><a class="btn btn-default" href="#">Learn more &raquo;</a></p>
+    </div>
+</div>
+<br/>
+<hr />
+<footer style="margin-top: 20px;">
+    <p>&copy; 2026 - My ASP.NET Application (KMC Platform)</p>
+</footer>
