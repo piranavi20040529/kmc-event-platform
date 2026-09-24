@@ -1,210 +1,151 @@
-using KMC.EventPlatformAPI.Models;
-using KMC.EventPlatformAPI.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+using KMC.EventClient.Models;
+using KMC.EventClient.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
-namespace KMC.EventPlatformAPI.Controllers
+namespace KMC.EventClient.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController : Controller
     {
-        private readonly IAuthService _authService;
-        private readonly UserManager<User> _userManager;
+        private readonly IApiService _apiService;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService, UserManager<User> userManager)
+        public AuthController(IApiService apiService, ILogger<AuthController> logger)
         {
-            _authService = authService;
-            _userManager = userManager;
+            _apiService = apiService;
+            _logger = logger;
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto loginRequest)
+        [HttpGet]
+        public IActionResult Login()
         {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Login(LoginModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
             try
             {
-                Console.WriteLine($" Login attempt for: {loginRequest?.Username}");
-
-                if (loginRequest == null || string.IsNullOrEmpty(loginRequest.Username))
-                    return BadRequest(new { message = "Username is required." });
-
-                var (token, role) = await _authService.LoginAsync(loginRequest.Username, loginRequest.Password);
-
-                if (string.IsNullOrEmpty(token))
+                if (string.IsNullOrEmpty(model.Username) || string.IsNullOrEmpty(model.Password))
                 {
-                    Console.WriteLine($" Login failed for: {loginRequest.Username}");
-                    return Unauthorized(new { message = "Invalid username or password." });
+                    TempData["ErrorMessage"] = "Username and password are required.";
+                    return View(model);
                 }
 
-                Console.WriteLine($" Login successful: {loginRequest.Username}");
-                return Ok(new
+                _logger.LogInformation($" Attempting login for: {model.Username}");
+
+                var response = await _apiService.LoginAsync(model.Username, model.Password);
+
+                if (response == null || string.IsNullOrEmpty(response.Token))
                 {
-                    token = token,
-                    role = role ?? "Public",
-                    username = loginRequest.Username
-                });
+                    _logger.LogWarning($" Login failed for: {model.Username}");
+                    TempData["ErrorMessage"] = "Invalid username or password. Please try again.";
+                    return View(model);
+                }
+
+                // Store in session
+                HttpContext.Session.SetString("JWTToken", response.Token);
+                HttpContext.Session.SetString("Username", response.Username);
+                HttpContext.Session.SetString("Role", response.Role ?? "Public");
+
+                _logger.LogInformation($" Login successful! User: {response.Username}, Role: {response.Role}");
+
+                TempData["SuccessMessage"] = $"Welcome {response.Username}!";
+                return RedirectToAction("Index", "Events");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($" Login error: {ex.Message}");
-                return StatusCode(500, new { error = ex.Message });
+                _logger.LogError($" Login error: {ex.Message}");
+                TempData["ErrorMessage"] = $"Login error: {ex.Message}";
+                return View(model);
             }
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto registerRequest)
+        [HttpGet]
+        public IActionResult Register()
         {
+            return View(new RegisterModel { Role = "Public" });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Register(RegisterModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join("; ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+                TempData["ErrorMessage"] = $"Validation failed: {errors}";
+                return View(model);
+            }
+
             try
             {
-                Console.WriteLine($" Registration request for: {registerRequest?.Username}");
+                if (string.IsNullOrEmpty(model.Role))
+                    model.Role = "Public";
 
-                if (registerRequest == null)
-                    return BadRequest(new { message = "Invalid request data." });
+                // Trim all inputs
+                model.Username = model.Username?.Trim() ?? string.Empty;
+                model.Email = model.Email?.Trim().ToLower() ?? string.Empty;
+                model.FullName = model.FullName?.Trim() ?? string.Empty;
 
-                if (string.IsNullOrWhiteSpace(registerRequest.Username))
-                    return BadRequest(new { message = "Username is required." });
+                Console.WriteLine($" Sending registration request:");
+                Console.WriteLine($"  Username: {model.Username}");
+                Console.WriteLine($"  Email: {model.Email}");
+                Console.WriteLine($"  FullName: {model.FullName}");
+                Console.WriteLine($"  Role: {model.Role}");
 
-                if (string.IsNullOrWhiteSpace(registerRequest.Password))
-                    return BadRequest(new { message = "Password is required." });
+                var (success, errorMessage) = await _apiService.RegisterAsync(model);
 
-                if (registerRequest.Password.Length < 6)
-                    return BadRequest(new { message = "Password must be at least 6 characters." });
-
-                var user = new User
+                if (success)
                 {
-                    UserName = registerRequest.Username.Trim(),
-                    Email = registerRequest.Email?.Trim() ?? $"user_{Guid.NewGuid().ToString().Substring(0, 8)}@placeholder.local",
-                    FullName = registerRequest.FullName?.Trim() ?? string.Empty,
-                 
-                    Role = registerRequest.Role ?? "Public",
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                var (succeeded, errors) = await _authService.RegisterUserAsync(user, registerRequest.Password);
-
-                if (!succeeded)
-                {
-                    Console.WriteLine($" Registration failed for: {registerRequest.Username}");
-                    return BadRequest(new { message = string.Join("; ", errors) });
+                    TempData["SuccessMessage"] = "Registration successful! Please login.";
+                    return RedirectToAction("Login");
                 }
 
-                Console.WriteLine($" Registration successful: {registerRequest.Username}");
-                return Ok(new
-                {
-                    message = "User created successfully.",
-                    role = user.Role
-                });
+                TempData["ErrorMessage"] = errorMessage ?? "Registration failed. Username or email may already exist.";
+                return View(model);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($" Registration error: {ex.Message}");
-                return StatusCode(500, new { error = ex.Message });
+                _logger.LogError($" Registration error: {ex.Message}");
+                TempData["ErrorMessage"] = $"Registration error: {ex.Message}";
+                return View(model);
             }
         }
 
-        [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto request)
+        [HttpGet]
+        public IActionResult ForgotPassword()
         {
-            try
-            {
-                if (request == null || string.IsNullOrWhiteSpace(request.Email))
-                    return BadRequest(new { message = "Email is required." });
-
-                if (string.IsNullOrWhiteSpace(request.NewPassword))
-                    return BadRequest(new { message = "New Password is required." });
-
-                if (request.NewPassword.Length < 6)
-                    return BadRequest(new { message = "Password must be at least 6 characters." });
-
-                var user = await _userManager.FindByEmailAsync(request.Email.Trim());
-                if (user == null)
-                {
-                    return NotFound(new { message = "No user found with this email address." });
-                }
-
-                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var result = await _userManager.ResetPasswordAsync(user, token, request.NewPassword);
-
-                if (!result.Succeeded)
-                {
-                    return BadRequest(new { message = string.Join("; ", result.Errors.Select(e => e.Description)) });
-                }
-
-                Console.WriteLine($" Password reset successful for user: {user.UserName} (Email: {request.Email})");
-                return Ok(new { message = "Password reset successfully." });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($" ForgotPassword error: {ex.Message}");
-                return StatusCode(500, new { error = ex.Message });
-            }
+            return View();
         }
 
-        [HttpGet("profile")]
-        [Authorize]
-        public async Task<IActionResult> GetProfile()
+        [HttpPost]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordModel model)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
+            if (!ModelState.IsValid)
+                return View(model);
 
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-                return NotFound(new { message = "User not found." });
+            var (success, errorMessage) = await _apiService.ForgotPasswordAsync(model.Email, model.NewPassword);
 
-            return Ok(new
+            if (success)
             {
-                user.FullName,
-                user.Email,
-                user.UserName
-            });
+                TempData["SuccessMessage"] = "Your password has been reset successfully! Please login with your new password.";
+                return RedirectToAction("Login");
+            }
+
+            TempData["ErrorMessage"] = errorMessage ?? "Failed to reset password. Please ensure your email is correct.";
+            return View(model);
         }
 
-        [HttpPut("update-profile")]
-        [Authorize]
-        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto request)
+        public IActionResult Logout()
         {
-            try
-            {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized();
-
-                var user = await _userManager.FindByIdAsync(userId);
-                if (user == null)
-                    return NotFound(new { message = "User not found." });
-
-                if (!string.IsNullOrWhiteSpace(request.FullName))
-                    user.FullName = request.FullName.Trim();
-
-                if (!string.IsNullOrWhiteSpace(request.Email))
-                    user.Email = request.Email.Trim().ToLower();
-
-                if (!string.IsNullOrWhiteSpace(request.Password))
-                {
-                    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                    var result = await _userManager.ResetPasswordAsync(user, token, request.Password);
-                    if (!result.Succeeded)
-                    {
-                        return BadRequest(new { message = string.Join("; ", result.Errors.Select(e => e.Description)) });
-                    }
-                }
-
-                var updateResult = await _userManager.UpdateAsync(user);
-                if (!updateResult.Succeeded)
-                {
-                    return BadRequest(new { message = string.Join("; ", updateResult.Errors.Select(e => e.Description)) });
-                }
-
-                return Ok(new { message = "Profile updated successfully.", fullName = user.FullName, email = user.Email });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($" UpdateProfile error: {ex.Message}");
-                return StatusCode(500, new { error = ex.Message });
-            }
+            HttpContext.Session.Clear();
+            TempData["SuccessMessage"] = "You have been logged out.";
+            return RedirectToAction("Login");
         }
     }
 }

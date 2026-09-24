@@ -1,301 +1,328 @@
-using KMC.EventPlatformAPI.Data;
-using KMC.EventPlatformAPI.Models;
-using Microsoft.AspNetCore.Authorization;
+using KMC.EventClient.Models;
+using KMC.EventClient.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
+using Microsoft.Extensions.Caching.Memory;
 
-namespace KMC.EventPlatformAPI.Controllers
+namespace KMC.EventClient.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    [Authorize]
-    public class EventsController : ControllerBase
+    public class EventsController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IApiService _apiService;
+        private readonly IMemoryCache _cache;
 
-        public EventsController(ApplicationDbContext context)
+        public EventsController(IApiService apiService, IMemoryCache memoryCache)
         {
-            _context = context;
+            _apiService = apiService;
+            _cache = memoryCache;
         }
 
-      
-        [HttpGet("public")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetPublicEvents(DateTime? date, string? eventType, string? keyword)
+        private void SetUserViewBag()
         {
-            var query = _context.Events.AsQueryable();
+            ViewBag.Username = HttpContext.Session.GetString("Username") ?? "Guest";
+            ViewBag.IsLoggedIn = !string.IsNullOrEmpty(HttpContext.Session.GetString("JWTToken"));
+            ViewBag.Role = HttpContext.Session.GetString("Role") ?? "User";
+        }
 
-            if (date.HasValue)
-                query = query.Where(e => e.Date.Date == date.Value.Date);
+        private bool IsUserLoggedIn()
+        {
+            return !string.IsNullOrEmpty(HttpContext.Session.GetString("JWTToken"));
+        }
 
-            if (!string.IsNullOrEmpty(eventType))
+        public async Task<IActionResult> Index(DateTime? date, string? type, string? keyword)
+        {
+            SetUserViewBag();
+            try
             {
-                var typeLower = eventType.Trim().ToLower();
-                query = query.Where(e => e.EventType.ToLower() == typeLower);
-            }
-
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                var kw = keyword.Trim().ToLower();
-                query = query.Where(e => e.Title.ToLower().Contains(kw) || e.Description.ToLower().Contains(kw));
-            }
-
-            var events = await query
-                .Include(e => e.CreatedByUser)
-                .Select(e => new
+                if (IsUserLoggedIn())
                 {
-                    e.Id,
-                    e.Title,
-                    e.Description,
-                    e.Date,
-                    e.Location,
-                    e.EventType,
-                    e.MaxParticipants,
-                    OrganizerName = e.CreatedByUser != null ? e.CreatedByUser.FullName : "Unknown",
-                    ParticipantCount = _context.EventRegistrations.Count(r => r.EventId == e.Id)
-                })
-                .ToListAsync();
+                    var role = HttpContext.Session.GetString("Role");
 
-            return Ok(events);
+                    if (role == "Admin")
+                        return RedirectToAction(nameof(AdminDashboard));
+
+                    if (role == "Organizer")
+                        return RedirectToAction(nameof(MyEvents));
+
+                    return RedirectToAction(nameof(PublicEvents));
+                }
+
+                var events = await _apiService.GetPublicEventsAsync(date, type, keyword);
+                return View(events ?? new List<EventModel>());
+            }
+            catch
+            {
+                return View(new List<EventModel>());
+            }
         }
 
-     
+        public async Task<IActionResult> PublicEvents(DateTime? date, string? type, string? keyword)
+        {
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction(nameof(Index));
+
+            var role = HttpContext.Session.GetString("Role");
+            if (role == "Admin") return RedirectToAction(nameof(AdminDashboard));
+
+            try
+            {
+                var events = await _apiService.GetPublicEventsAsync(date, type, keyword);
+                return View(events ?? new List<EventModel>());
+            }
+            catch
+            {
+                return View(new List<EventModel>());
+            }
+        }
+
+        public async Task<IActionResult> MyEvents()
+        {
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
+
+            try
+            {
+                var events = await _apiService.GetMyEventsAsync();
+                return View(events ?? new List<EventModel>());
+            }
+            catch
+            {
+                return View(new List<EventModel>());
+            }
+        }
+
         [HttpGet]
-        public async Task<IActionResult> GetMyEvents()
+        public IActionResult Create()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-          
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
-
-            var events = await _context.Events
-                .Where(e => e.CreatedByUserId == userId)
-                .Include(e => e.CreatedByUser)
-                .Select(e => new
-                {
-                    e.Id,
-                    e.Title,
-                    e.Description,
-                    e.Date,
-                    e.Location,
-                    e.EventType,
-                    e.MaxParticipants,
-                    OrganizerName = e.CreatedByUser != null ? e.CreatedByUser.FullName : "Unknown",
-                    ParticipantCount = _context.EventRegistrations.Count(r => r.EventId == e.Id)
-                })
-                .ToListAsync();
-
-            return Ok(events);
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
+            return View(new EventModel());
         }
 
-    
-        [HttpGet("{id}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetEvent(int id)
-        {
-            var eventItem = await _context.Events
-                .Include(e => e.CreatedByUser)
-                .FirstOrDefaultAsync(e => e.Id == id);
-
-            if (eventItem == null)
-                return NotFound();
-
-            var result = new
-            {
-                eventItem.Id,
-                eventItem.Title,
-                eventItem.Description,
-                eventItem.Date,
-                eventItem.Location,
-                eventItem.EventType,
-                eventItem.MaxParticipants,
-                OrganizerName = eventItem.CreatedByUser?.FullName ?? "Unknown",
-                ParticipantCount = await _context.EventRegistrations.CountAsync(r => r.EventId == id)
-            };
-
-            return Ok(result);
-        }
-
-      
         [HttpPost]
-        public async Task<IActionResult> CreateEvent([FromBody] Event newEvent)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(EventModel newEvent)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
+
+            if (!ModelState.IsValid) return View(newEvent);
+
+            var success = await _apiService.CreateEventAsync(newEvent);
+            if (success)
+            {
+                TempData["SuccessMessage"] = "Event created successfully!";
+                return RedirectToAction(nameof(MyEvents));
+            }
+
+            TempData["ErrorMessage"] = "Failed to create event.";
+            return View(newEvent);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ViewRegistrations(int id)
+        {
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
+
+            var page = await _apiService.GetEventRegistrationsAsync(id);
+            if (page == null)
+            {
+                TempData["ErrorMessage"] = "Could not load registrations for this event.";
+                return RedirectToAction(nameof(MyEvents));
+            }
+
+            return View(page);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
+
+            var eventItem = await _apiService.GetEventByIdAsync(id);
+            if (eventItem == null) return RedirectToAction(nameof(MyEvents));
+            return View(eventItem);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Register(int id)
+        {
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
+
+            var eventItem = await _apiService.GetEventByIdAsync(id);
+            if (eventItem == null) return RedirectToAction(nameof(PublicEvents));
+
+            if (eventItem.MaxParticipants > 0 && eventItem.ParticipantCount >= eventItem.MaxParticipants)
+            {
+                TempData["ErrorMessage"] = "This event is already full.";
+                return RedirectToAction(nameof(PublicEvents));
+            }
 
            
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
+            ViewBag.EventTitle = eventItem.Title;
+            ViewBag.EventLocation = eventItem.Location;
+            ViewBag.EventDate = eventItem.Date.ToString("dd MMM yyyy, hh:mm tt");
+            ViewBag.EventOrganizer = eventItem.OrganizerName;
+            ViewBag.EventType = eventItem.EventType;
+            ViewBag.EventParticipants = $"{eventItem.ParticipantCount} / {eventItem.MaxParticipants}";
 
-            if (string.IsNullOrWhiteSpace(newEvent.Title))
-                return BadRequest("Title is required");
-
-            if (string.IsNullOrWhiteSpace(newEvent.Description))
-                return BadRequest("Description is required");
-
-            if (newEvent.Date == default)
-                return BadRequest("Date is required");
-
-            newEvent.CreatedByUserId = userId;
-            newEvent.CreatedAt = DateTime.UtcNow; 
-            newEvent.IsApproved = true; 
-
-            _context.Events.Add(newEvent);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetEvent), new { id = newEvent.Id }, newEvent);
+            return View(new EventRegistrationModel { EventId = id });
         }
 
-    
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateEvent(int id, [FromBody] Event updatedEvent)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(int id, EventRegistrationModel model)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
 
-         
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
+            if (!ModelState.IsValid) return View(model);
 
-            var existingEvent = await _context.Events.FindAsync(id);
-            if (existingEvent == null)
-                return NotFound();
+            model.EventId = id;
+            var (success, errorMessage) = await _apiService.RegisterForEventAsync(model);
 
-            if (existingEvent.CreatedByUserId != userId)
-                return Forbid("You are not the creator of this event");
-
-          
-            existingEvent.Title = updatedEvent.Title;
-            existingEvent.Description = updatedEvent.Description;
-            existingEvent.Date = updatedEvent.Date;
-            existingEvent.Location = updatedEvent.Location;
-            existingEvent.EventType = updatedEvent.EventType;
-            existingEvent.MaxParticipants = updatedEvent.MaxParticipants;
-
-            await _context.SaveChangesAsync();
-            return Ok(existingEvent);
+            TempData[success ? "SuccessMessage" : "ErrorMessage"] =
+                success ? "You have successfully registered for the event!" : (errorMessage ?? "Registration failed.");
+            return RedirectToAction(nameof(PublicEvents));
         }
 
-       
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteEvent(int id)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, EventModel model)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
 
-         
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
+            if (!ModelState.IsValid) return View(model);
 
-            var eventItem = await _context.Events.FindAsync(id);
-            if (eventItem == null)
-                return NotFound();
-
-            if (eventItem.CreatedByUserId != userId)
-                return Forbid("You are not the creator of this event");
-
-            _context.Events.Remove(eventItem);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-    
-        [HttpPost("{id}/register")]
-        public async Task<IActionResult> RegisterForEvent(int id, [FromBody] EventRegistration registration)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
-
-            var eventItem = await _context.Events.FindAsync(id);
-            if (eventItem == null)
-                return NotFound();
-
-            
-            var existingRegistration = await _context.EventRegistrations
-                .FirstOrDefaultAsync(r => r.EventId == id && r.UserId == userId);
-
-            if (existingRegistration != null)
-                return BadRequest("Already registered for this event");
-
-            var currentCount = await _context.EventRegistrations.CountAsync(r => r.EventId == id);
-            if (eventItem.MaxParticipants > 0 && currentCount >= eventItem.MaxParticipants)
-                return BadRequest("This event is already full.");
-
-            registration.UserId = userId;
-            registration.EventId = id;
-            registration.RegisteredAt = DateTime.UtcNow;
-
-            _context.EventRegistrations.Add(registration);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Registration successful" });
-        }
-
-      
-        [HttpGet("{id}/registrations")]
-        public async Task<IActionResult> GetEventRegistrations(int id)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
-
-            var eventItem = await _context.Events.FindAsync(id);
-            if (eventItem == null)
-                return NotFound();
-
-            if (eventItem.CreatedByUserId != userId)
-                return Forbid("You are not authorized to view registrations for this event");
-
-            var registrations = await _context.EventRegistrations
-                .Where(r => r.EventId == id)
-                .OrderBy(r => r.RegisteredAt)
-                .Select(r => new
-                {
-                    r.Id,
-                    r.FullName,
-                    r.Email,
-                    r.PhoneNumber,
-                    r.RegisteredAt
-                })
-                .ToListAsync();
-
-            return Ok(new
+            var success = await _apiService.UpdateEventAsync(id, model);
+            if (success)
             {
-                EventId = eventItem.Id,
-                EventTitle = eventItem.Title,
-                Registrations = registrations
-            });
+                TempData["SuccessMessage"] = "Event updated successfully!";
+                return RedirectToAction(nameof(MyEvents));
+            }
+
+            TempData["ErrorMessage"] = "Failed to update event.";
+            return View(model);
         }
 
-      
-        [HttpGet("my-registrations")]
-        public async Task<IActionResult> GetMyRegistrations()
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id, string returnUrl = null)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
 
-            var registrations = await _context.EventRegistrations
-                .Where(r => r.UserId == userId && r.Event != null)
-                .Include(r => r.Event)
-                .ThenInclude(e => e!.CreatedByUser)
-                .Select(r => new
+            var success = await _apiService.DeleteEventAsync(id);
+            if (success)
+            {
+                TempData["SuccessMessage"] = "Event deleted successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to delete event.";
+            }
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            var role = HttpContext.Session.GetString("Role");
+            if (role == "Admin")
+            {
+                return RedirectToAction(nameof(AdminDashboard));
+            }
+            return RedirectToAction(nameof(MyEvents));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AdminDashboard()
+        {
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
+
+            var role = HttpContext.Session.GetString("Role");
+            if (role != "Admin")
+            {
+                return RedirectToAction(nameof(MyEvents));
+            }
+
+            var events = await _apiService.GetAllEventsAsync();
+            var profile = await _apiService.GetProfileAsync();
+            ViewBag.Profile = profile;
+
+            return View(events ?? new List<EventModel>());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfile(string fullName, string email, string password)
+        {
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
+
+            var role = HttpContext.Session.GetString("Role");
+            if (role != "Admin")
+            {
+                TempData["ErrorMessage"] = "Access denied.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var (success, errorMessage) = await _apiService.UpdateProfileAsync(fullName, email, password);
+            if (success)
+            {
+                TempData["SuccessMessage"] = "Profile details updated successfully!";
+                if (!string.IsNullOrEmpty(fullName))
                 {
-                    r.Id,
-                    r.EventId,
-                    r.RegisteredAt,
-                    EventTitle = r.Event!.Title,
-                    EventDate = r.Event.Date,
-                    EventLocation = r.Event.Location,
-                    EventDescription = r.Event.Description,
-                    OrganizerName = r.Event.CreatedByUser != null ? r.Event.CreatedByUser.FullName : "Unknown"
-                })
-                .ToListAsync();
+                    HttpContext.Session.SetString("Username", fullName);
+                }
+            }
+            else
+            {
+                TempData["ErrorMessage"] = errorMessage ?? "Failed to update profile details.";
+            }
 
-            return Ok(registrations);
+            return RedirectToAction(nameof(AdminDashboard));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Approve(int id)
+        {
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
+
+            var role = HttpContext.Session.GetString("Role");
+            if (role != "Admin")
+            {
+                TempData["ErrorMessage"] = "Access denied. Admin role required.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var success = await _apiService.ApproveEventAsync(id);
+            if (success)
+            {
+                TempData["SuccessMessage"] = "Event approved successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to approve event.";
+            }
+
+            return RedirectToAction(nameof(AdminDashboard));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MyRegistrations()
+        {
+            SetUserViewBag();
+            if (!IsUserLoggedIn()) return RedirectToAction("Login", "Auth");
+
+            var events = await _apiService.GetMyRegistrationsAsync();
+            return View(events ?? new List<EventModel>());
         }
     }
 }
